@@ -12,6 +12,25 @@
  *   https://github.com/nlohmann/json
  */
 
+#include <iostream>
+
+#include "cpproxy.hpp"
+
 int main()
 {
+	cpproxy checker;
+
+	checker.add("localhost");
+
+	checker.scan();
+
+	if (const auto [status, is_proxy] = checker.read("localhost"); status)
+	{
+		std::cout << "Status of IP is ok.\n";
+
+		if (is_proxy)
+			std::cout << "This IP is proxy!\n";
+		else
+			std::cout << "This IP is not proxy!\n";
+	}
 }
