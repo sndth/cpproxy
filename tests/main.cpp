@@ -24,13 +24,18 @@ int main()
 
 	checker.scan();
 
-	if (const auto [status, is_proxy] = checker.read("localhost"); status)
+	if (const auto [status, is_proxy, json_error] = checker.read("localhost"); status)
 	{
-		std::cout << "Status of IP is ok.\n";
-
-		if (is_proxy)
-			std::cout << "This IP is proxy!\n";
+		if (!json_error.empty())
+			std::cout << json_error;
 		else
-			std::cout << "This IP is not proxy!\n";
+		{
+			std::cout << "Status of IP is ok.\n";
+
+			if (is_proxy)
+				std::cout << "This IP is proxy!\n";
+			else
+				std::cout << "This IP is not proxy!\n";
+		}
 	}
 }

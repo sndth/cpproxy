@@ -23,6 +23,7 @@ class cpproxy
 	{
 		bool status;
 		bool is_proxy;
+		std::string json_error;
 	} t_ip;
 
 	std::unordered_map<std::string, asio::ip::tcp::iostream> map_;
@@ -60,9 +61,10 @@ class cpproxy
 					ip.is_proxy = it.value().at("proxy") == "yes" ? true : false;
 			}
 		}
-		catch (...)
+		catch (const nlohmann::json::exception& error)
 		{
-			return {};
+			ip.json_error = error.what();
+			return ip;
 		}
 
 		return ip;
@@ -93,14 +95,13 @@ public:
 
 	t_ip read(const std::string& ip)
 	{
-		const auto element = map_.find(ip);
-
-		if (element == map_.end())
+		if (const auto element = map_.find(ip); element == map_.end())
 			return {};
-
-		std::string string(std::istreambuf_iterator(element->second), {});
-		string.erase(0, string.find('{'));
-
-		return parse_by_json(string);
+		else
+		{
+			std::string string(std::istreambuf_iterator(element->second), {});
+			string.erase(0, string.find('{'));
+			return parse_by_json(string);
+		}
 	}
 };
