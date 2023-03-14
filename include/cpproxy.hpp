@@ -117,14 +117,14 @@ public:
 
 	bool is_proxy(const cpproxy_string& ip)
 	{
-		if (const auto element = map_.find(ip); element == map_.end())
-			throw std::exception("cpproxy::is_proxy - element not found in map.\n");
-		else
-		{
-			if (const auto [fst, snd] = parse_json(cleanup_json(element->second)); fst)
-				return snd;
+		const auto element = map_.find(ip);
 
-			throw std::exception("cpproxy::is_proxy - status is not true.\n");
-		}
+		if (element == map_.end())
+			throw std::exception("cpproxy::is_proxy - element not found in map.\n");
+
+		if (const auto [fst, snd] = parse_json(cleanup_json(element->second)); fst)
+			return snd;
+
+		throw std::exception("cpproxy::is_proxy - status is not true.\n");
 	}
 };
