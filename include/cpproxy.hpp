@@ -21,6 +21,12 @@ protected:
 #else
 	using cpproxy_string = std::string_view;
 #endif
+
+#if __cplusplus <= 201703L
+	using cpproxy_thread = std::thread;
+#else
+	using cpproxy_thread = std::jthread;
+#endif
 };
 
 class cpproxy_asio : public cpproxy_core
@@ -89,7 +95,7 @@ public:
 
 	void scan()
 	{
-		std::vector<std::jthread> threads;
+		std::vector<cpproxy_thread> threads;
 
 		for (auto& [fst, snd] : map_)
 		{
@@ -102,6 +108,11 @@ public:
 				}
 			);
 		}
+
+#if __cplusplus <= 201703L
+		for (auto& it : threads)
+			it.join();
+#endif
 	}
 
 	bool is_proxy(const cpproxy_string& ip)
