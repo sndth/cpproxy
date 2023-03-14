@@ -19,13 +19,6 @@
 
 class cpproxy
 {
-	typedef struct s_ip
-	{
-		bool status;
-		bool is_proxy;
-		std::string json_error;
-	} t_ip;
-
 	std::unordered_map<std::string, asio::ip::tcp::iostream> map_;
 
 	static auto make_asio_iostream(const std::string& ip)
@@ -43,7 +36,14 @@ class cpproxy
 		return stream;
 	}
 
-	static t_ip parse_by_json(const std::string& object)
+	typedef struct s_ip
+	{
+		bool status;
+		bool is_proxy;
+		std::string json_error;
+	} t_ip;
+
+	static auto parse_by_json(const std::string& object)
 	{
 		t_ip ip = {};
 
@@ -70,6 +70,11 @@ class cpproxy
 		return ip;
 	}
 
+	static auto cpproxy_exception(const std::string& message, const std::string& function)
+	{
+		return std::exception((function + std::string(" - ") + message).c_str());
+	}
+
 public:
 	void add(const std::string& ip, const bool force_check = false)
 	{
@@ -93,10 +98,10 @@ public:
 		}
 	}
 
-	t_ip read(const std::string& ip)
+	auto read(const std::string& ip)
 	{
 		if (const auto element = map_.find(ip); element == map_.end())
-			return {};
+			throw cpproxy_exception("key (" + ip + ") not found.\n", __FUNCTION__);
 		else
 		{
 			std::string string(std::istreambuf_iterator(element->second), {});
