@@ -1,15 +1,11 @@
 /*
- *   ___ _ __  _ __  _ __ _____  ___   _
- *  / __| '_ \| '_ \| '__/ _ \ \/ / | | |
- * | (__| |_) | |_) | | | (_) >  <| |_| |
- *  \___| .__/| .__/|_|  \___/_/\_\\__, |
- *      |_|   |_|                  |___/ https://github.com/Thorek777/cpproxy
+ * CPProxy:
+ *  https://github.com/Thorek777/cpproxy
  *
- * For modern C++.
- * Required dependencies:
- *   https://proxycheck.io
- *   https://think-async.com/Asio
- *   https://github.com/nlohmann/json
+ * Library powered by:
+ *  https://proxycheck.io
+ *  https://think-async.com/Asio
+ *  https://github.com/nlohmann/json
  */
 
 #pragma once
@@ -17,11 +13,22 @@
 #include "asio/asio.hpp"
 #include "json/json.hpp"
 
-class cpproxy
+class cpproxy_core
 {
-	std::unordered_map<std::string, asio::ip::tcp::iostream> map_;
+protected:
+#if __cplusplus < 201703L
+	using cpproxy_string = std::string;
+#else
+	using cpproxy_string = std::string_view;
+#endif
+};
 
-	static auto make_asio_iostream(const std::string& ip)
+class cpproxy_asio : public cpproxy_core
+{
+protected:
+	std::unordered_map<cpproxy_string, asio::ip::tcp::iostream> map_;
+
+	static auto make_asio_iostream(const cpproxy_string& ip)
 	{
 		asio::ip::tcp::iostream stream("proxycheck.io", "http");
 
@@ -35,48 +42,47 @@ class cpproxy
 
 		return stream;
 	}
+};
 
-	typedef struct s_ip
+class cpproxy_json : public cpproxy_asio
+{
+protected:
+	struct s_ip
 	{
 		bool status;
-		bool is_proxy;
-		std::string json_error;
-	} t_ip;
+		bool proxy;
+	};
 
-	static auto parse_by_json(const std::string& object)
+	static auto parse_json(const cpproxy_string& object)
 	{
-		t_ip ip = {};
+		s_ip ip = {};
 
-		try
+		// ReSharper disable once CppTooWideScopeInitStatement
+		const auto json = nlohmann::json::parse(object);
+
+		for (const auto& it : json.items())
 		{
-			// ReSharper disable once CppTooWideScopeInitStatement
-			const auto json = nlohmann::json::parse(object);
+			if (!it.value().is_object())
+				ip.status = it.value() == "ok" ? true : false;
 
-			for (const auto& it : json.items())
-			{
-				if (!it.value().is_object())
-					ip.status = it.value() == "ok" ? true : false;
-
-				if (it.value().is_object())
-					ip.is_proxy = it.value().at("proxy") == "yes" ? true : false;
-			}
-		}
-		catch (const nlohmann::json::exception& error)
-		{
-			ip.json_error = error.what();
-			return ip;
+			if (it.value().is_object())
+				ip.proxy = it.value().at("proxy") == "yes" ? true : false;
 		}
 
 		return ip;
 	}
 
-	static auto cpproxy_exception(const std::string& message, const std::string& function)
+	static auto cleanup_json(const asio::ip::tcp::iostream& object)
 	{
-		return std::exception((function + std::string(" - ") + message).c_str());
+		std::string string(std::istreambuf_iterator(object.rdbuf()), {});
+		return string.erase(0, string.find('{'));
 	}
+};
 
+class cpproxy : public cpproxy_json
+{
 public:
-	void add(const std::string& ip, const bool force_check = false)
+	void add(const cpproxy_string& ip, const bool force_check = false)
 	{
 		map_.emplace(ip, !force_check ? asio::ip::tcp::iostream() : make_asio_iostream(ip));
 	}
@@ -98,15 +104,16 @@ public:
 		}
 	}
 
-	auto read(const std::string& ip)
+	bool is_proxy(const cpproxy_string& ip)
 	{
 		if (const auto element = map_.find(ip); element == map_.end())
-			throw cpproxy_exception("key (" + ip + ") not found.\n", __FUNCTION__);
+			throw std::exception("cpproxy::is_proxy - element not found in map.\n");
 		else
 		{
-			std::string string(std::istreambuf_iterator(element->second), {});
-			string.erase(0, string.find('{'));
-			return parse_by_json(string);
+			if (const auto [fst, snd] = parse_json(cleanup_json(element->second)); fst)
+				return snd;
+
+			throw std::exception("cpproxy::is_proxy - status is not true.\n");
 		}
 	}
 };

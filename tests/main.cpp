@@ -1,15 +1,11 @@
 /*
- *   ___ _ __  _ __  _ __ _____  ___   _
- *  / __| '_ \| '_ \| '__/ _ \ \/ / | | |
- * | (__| |_) | |_) | | | (_) >  <| |_| |
- *  \___| .__/| .__/|_|  \___/_/\_\\__, |
- *      |_|   |_|                  |___/ https://github.com/Thorek777/cpproxy
+ * CPProxy:
+ *  https://github.com/Thorek777/cpproxy
  *
- * For modern C++.
- * Required dependencies:
- *   https://proxycheck.io
- *   https://think-async.com/Asio
- *   https://github.com/nlohmann/json
+ * Library powered by:
+ *  https://proxycheck.io
+ *  https://think-async.com/Asio
+ *  https://github.com/nlohmann/json
  */
 
 #include <iostream>
@@ -18,24 +14,31 @@
 
 int main()
 {
-	cpproxy checker;
-
-	checker.add("localhost");
-
-	checker.scan();
-
-	if (const auto [status, is_proxy, json_error] = checker.read("localhost"); status)
+	try
 	{
-		if (!json_error.empty())
-			std::cout << json_error;
-		else
-		{
-			std::cout << "Status of IP is ok.\n";
+		cpproxy checker;
 
-			if (is_proxy)
-				std::cout << "This IP is proxy!\n";
-			else
-				std::cout << "This IP is not proxy!\n";
-		}
+		// https://free-proxy-list.net
+		checker.add("198.199.86.11");
+		checker.add("157.230.48.102");
+		checker.add("154.61.143.238");
+		checker.add("200.105.215.22");
+		checker.add("139.99.237.62");
+		checker.add("51.15.242.202");
+		checker.add("45.32.245.26");
+		checker.add("157.254.193.139");
+		checker.add("146.83.128.23");
+		checker.add("43.255.113.232");
+
+		checker.scan();
+
+		if (checker.is_proxy("43.255.113.232"))
+			std::cout << "IP is proxy!\n";
+		else
+			std::cout << "IP is not proxy!\n";
+	}
+	catch (const std::exception& message)
+	{
+		std::cout << message.what();
 	}
 }
