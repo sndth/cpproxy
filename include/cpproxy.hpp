@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "asio/asio.hpp"
-#include "json/json.hpp"
+#include "asio/asio/include/asio.hpp"
+#include "json/single_include/nlohmann/json.hpp"
 
 class cpproxy_core
 {
@@ -37,6 +37,9 @@ protected:
 	static auto make_asio_iostream(const cpproxy_string& ip)
 	{
 		asio::ip::tcp::iostream stream("proxycheck.io", "http");
+
+		if (!stream)
+			throw std::exception("cpproxy_asio::make_asio_iostream - stream is a null pointer.\n");
 
 		stream << "POST /v2/" << ip << "?vpn=1&asn=1 HTTP/1.0\r\n";
 		stream << "Host: proxycheck.io\r\n";
