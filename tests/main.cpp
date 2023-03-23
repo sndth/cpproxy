@@ -8,6 +8,7 @@
  *  https://github.com/nlohmann/json
  */
 
+#include <fstream>
 #include <iostream>
 
 #include "cpproxy.hpp"
@@ -36,6 +37,10 @@ int main()
 			std::cout << "IP is proxy!\n";
 		else
 			std::cout << "IP is not proxy!\n";
+
+		std::ofstream file("output.json");
+
+		checker.to_stream(file);
 	}
 	catch (const std::exception& message)
 	{

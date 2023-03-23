@@ -130,4 +130,14 @@ public:
 
 		throw std::exception("cpproxy::is_proxy - status is not true.\n");
 	}
+
+	template<typename T> void to_stream(T& output)
+	{
+		nlohmann::json items;
+
+		for (const auto& it : map_)
+			items.emplace_back(nlohmann::json::parse(cleanup_json(it.second)));
+
+		output << items.dump(2) << '\n';
+	}
 };
